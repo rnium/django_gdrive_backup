@@ -3,3 +3,4 @@ __pycache__
 temp
 token.pickle
 client_secret.json
+config.json
