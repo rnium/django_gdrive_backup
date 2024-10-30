@@ -1,6 +1,7 @@
 import typer
-import os
 import json
+import os
+import subprocess
 from app import settings
 from app.drive_utils import gdrive_client
 
@@ -43,7 +44,8 @@ class Config:
         app_name = os.path.basename(django_app_path)
         if app_name in self.projects:
             raise AttributeError('App already configured')
-        app_folder_id = gdrive_client.create_folder(app_name, self.root_folder_id)
+        app_folder_id = gdrive_client.create_folder(
+            app_name, self.root_folder_id)
         self.projects[app_name] = {
             'app_path': django_app_path,
             'python_path': python_path,
@@ -52,7 +54,14 @@ class Config:
         }
         self.dump_config()
 
+    def get_app_config(self, app_name):
+        if not app_name in self.projects:
+            raise AttributeError('App not configured')
+        return self.projects[app_name]
+
+
 CONFIG = Config()
+
 
 def raise_for_typer_error(msg: str):
     error_message = typer.style(
@@ -62,3 +71,29 @@ def raise_for_typer_error(msg: str):
     typer.echo(error_message)
     raise typer.Exit(1)
 
+
+def show_success(msg: str):
+    error_message = typer.style(
+        msg,
+        fg=typer.colors.BRIGHT_GREEN
+    )
+    typer.echo(error_message)
+
+
+def create_data_backup(app_name):
+    config = CONFIG.get_app_config(app_name)
+    with open(settings.BASE_DIR / 'backup.json', 'w') as file:
+        subprocess.run(
+            [
+                config['python_path'],
+                f"{config['app_path']}/manage.py",
+                'dumpdata',
+                '--natural-foreign',
+                '--natural-primary',
+                '-e', 'contenttypes',
+                '-e', 'auth.Permission',
+                '--indent', '2'
+            ],
+            check=True,
+            stdout=file
+        )
