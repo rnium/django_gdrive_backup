@@ -2,6 +2,8 @@ import typer
 import json
 import os
 import subprocess
+import zipfile
+from datetime import datetime
 from app import settings
 from app.drive_utils import gdrive_client
 
@@ -75,14 +77,36 @@ def raise_for_typer_error(msg: str):
 def show_success(msg: str):
     error_message = typer.style(
         msg,
-        fg=typer.colors.BRIGHT_GREEN
+        fg=typer.colors.GREEN
     )
     typer.echo(error_message)
+    
+def get_filenames():
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S%f")
+    backup_file = settings.TEMP_DIR / f'backup_{timestamp}.json'
+    zip_file_path = settings.TEMP_DIR / f'archive_{timestamp}.zip'
+    return (backup_file, zip_file_path)
 
+def create_zip(zip_name, media_path, db_backup_file_path):
+    with zipfile.ZipFile(zip_name, 'w') as zipf:
+        for root, dirs, files in os.walk(media_path):
+            for file in files:
+                file_full_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_full_path, os.path.dirname(media_path))
+                zipf.write(file_full_path, arcname)
+        
+        zipf.write(db_backup_file_path, os.path.basename(db_backup_file_path))
+        
+def cleanup_files(*file_paths):
+    for fp in file_paths:
+        if os.path.isfile(fp):
+            os.remove(fp)
 
-def create_data_backup(app_name):
+def perform_data_backup(app_name):
     config = CONFIG.get_app_config(app_name)
-    with open(settings.BASE_DIR / 'backup.json', 'w') as file:
+    os.makedirs(settings.TEMP_DIR, exist_ok=True)
+    backup_file, zip_file_path = get_filenames()
+    with open(backup_file, 'w') as file:
         subprocess.run(
             [
                 config['python_path'],
@@ -97,3 +121,6 @@ def create_data_backup(app_name):
             check=True,
             stdout=file
         )
+    create_zip(zip_file_path, config.get('media_path'), backup_file)
+    gdrive_client.upload_file(zip_file_path, config.get('gdrive_folder'))
+    cleanup_files(backup_file, zip_file_path)

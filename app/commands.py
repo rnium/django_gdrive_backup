@@ -30,7 +30,7 @@ def add_app(app_path, python_path, media_path):
 @app.command()
 def backup_app(app_name: str):
     try:
-        utils.create_data_backup(app_name)
+        utils.perform_data_backup(app_name)
     except Exception as e:
         utils.raise_for_typer_error(str(e))
     utils.show_success('Backup Created')
