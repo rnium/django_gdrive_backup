@@ -55,6 +55,10 @@ class Config:
             'gdrive_folder': app_folder_id,
         }
         self.dump_config()
+        
+    def list_django_apps(self):
+        for idx, app_title in enumerate(self.projects.keys()):
+            print(f"{idx+1}. {app_title}")
 
     def get_app_config(self, app_name):
         if not app_name in self.projects:

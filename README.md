@@ -94,6 +94,7 @@ This cron job will run the `backup-app` command at 2 AM daily.
 | `main.py initiate`               | Initializes the app, authorizing Google Drive access.      |
 | `main.py add-app <...>`          | Adds a Django app configuration for backup.                |
 | `main.py backup-app <app name>`  | Backs up the specified app and uploads it to Google Drive. |
+| `main.py ls`                     | Lists all configured django apps.                          |
 
 ## Example Usage
 

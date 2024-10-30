@@ -28,6 +28,15 @@ def add_app(app_path, python_path, media_path):
 
 
 @app.command()
+def ls():
+    try:
+        utils.show_success('Configured django apps:')
+        CONFIG.list_django_apps()
+    except Exception as e:
+        utils.raise_for_typer_error(f"Error: {str(e)}")
+
+
+@app.command()
 def backup_app(app_name: str):
     try:
         utils.perform_data_backup(app_name)
